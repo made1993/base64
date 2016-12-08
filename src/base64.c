@@ -39,7 +39,7 @@ int encodeb64(byte* in, byte** out, int inlen){
 		}
 		else{
 			/*0x3F*/
-			value |= in[pos/8 -1] & 0x2F; 
+			value |= in[pos/8 -1] & 0x3F; 
 
 		}
 		(*out)[arrpos++] = base64code(value);
