@@ -29,9 +29,9 @@ int encodeb64v2(byte *in, byte **out, int inlen){
 	if(inlen %3 > 1)
 		size++;
 	size++;
-	out =  malloc(size);
+	*out =  malloc(size);
 	while(posIn <= inlen){
-		
+		_encodeb64(in[posIn], (*out)[posOut]);
 		posIn += 3;
 		posOut += 4;
 	}
