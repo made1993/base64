@@ -20,17 +20,21 @@ int _encodeb64(byte *in, byte *out){
 	return 0;
 }
 int _encodeb64Last(byte *in, byte *out, int len){
+	byte aux;
 	if(len > 2 || len < 1)
 		return 1;
 	out[0] = b64alf[(in[0] >> 2)];
 	
 	aux = (in[0] & 0x03) << 4;
 	out[1] = b64alf[(aux | (in[1] >> 4))];
-	
-	aux = (in[1] & 0x0F) << 2;
-	out[2] = b64alf[(aux | (in[2] >> 6))];
-	
-	out[3] = b64alf[ in[2] >> 2];
+	if(len ==2){
+		aux = (in[1] & 0x0F) << 2;
+		out[2] = b64alf[aux];
+	}
+	else{
+		out [2] = '=';
+	}
+	out[3] = '=';
 	
 	return 0;
 
@@ -40,6 +44,7 @@ int encodeb64v2(byte *in, byte **out, int inlen){
 	int size = 0;
 	int posIn = 0;
 	int posOut = 0;
+	int len = inlen - inlen%3;
 	if (inlen < 1 || in  == NULL || out == NULL)
 		return -1;
 	size = (inlen/3) * 4;
@@ -47,11 +52,12 @@ int encodeb64v2(byte *in, byte **out, int inlen){
 		size += 4;
 	size++;
 	*out =  malloc(size);
-	while(posIn <= inlen){
+	while(posIn <= len){
 		_encodeb64(&(in[posIn]), &(*out)[posOut]);
 		posIn += 3;
 		posOut += 4;
 	}
+	_encodeb64Last(&in[posIn], &(*out)[posOut], inlen%3);
 
 	out[size -1] =  '\0';
 	return size;
