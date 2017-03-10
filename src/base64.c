@@ -15,12 +15,12 @@ int _encodeb64(byte *in, byte *out){
 	aux = (in[1] & 0x0F) << 2;
 	out[2] = b64alf[(aux | (in[2] >> 6))];
 	
-	out[3] = b64alf[ in[2] >> 2];
+	out[3] = b64alf[ in[2] & 0x3F];
 	
 	return 0;
 }
 int _encodeb64Last(byte *in, byte *out, int len){
-	byte aux;
+	byte aux = 0;
 	if(len > 2 || len < 1)
 		return 1;
 	out[0] = b64alf[(in[0] >> 2)];
@@ -44,15 +44,19 @@ int encodeb64v2(byte *in, byte **out, int inlen){
 	int size = 0;
 	int posIn = 0;
 	int posOut = 0;
-	int len = inlen - inlen%3;
+	int len = 0;
 	if (inlen < 1 || in  == NULL || out == NULL)
 		return -1;
 	size = (inlen/3) * 4;
 	if(inlen %3 > 1)
 		size += 4;
 	size++;
+	len = inlen - inlen%3;
+	printf("%d\n", len);
+	*out=NULL;
 	*out =  malloc(size);
-	while(posIn <= len){
+	while(posIn < len){
+		printf("posIn\n");
 		_encodeb64(&(in[posIn]), &(*out)[posOut]);
 		posIn += 3;
 		posOut += 4;
@@ -117,8 +121,8 @@ int encodeb64(byte* in, byte** out, int inlen){
 int main(void)
 {
    char* out = NULL;
-   printf("%d %d %d\n\n", 'M', 'a', 'n');
-   encodeb64("M", (unsigned char**) &out, 1);
+   char in [] ="ManManMan";
+   encodeb64v2((char*)in, (unsigned char**) &out, 6);
    printf("%s\n", out);
    free(out);
    return 0;
