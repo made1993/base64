@@ -19,6 +19,8 @@ int _encodeb64(byte *in, byte *out){
 	
 	return 0;
 }
+
+
 int _encodeb64Last(byte *in, byte *out, int len){
 	byte aux = 0;
 	if(len > 2 || len < 1)
@@ -45,26 +47,105 @@ int encodeb64v2(byte *in, byte **out, int inlen){
 	int posIn = 0;
 	int posOut = 0;
 	int len = 0;
+	byte aux = 0;
 	if (inlen < 1 || in  == NULL || out == NULL)
 		return -1;
 	size = (inlen/3) * 4;
 	if(inlen %3 > 1)
 		size += 4;
-	size++;
 	len = inlen - inlen%3;
-	printf("%d\n", len);
-	*out=NULL;
-	*out =  malloc(size);
+	*out = NULL;
+	*out =  malloc(size + 1);
+
+	/*****BUCLE PRINCIPAL******/
 	while(posIn < len){
-		printf("posIn\n");
-		_encodeb64(&(in[posIn]), &(*out)[posOut]);
+
+		(*out)[posOut] = b64alf[(in[posIn] >> 2)];
+		
+		aux = (in[posIn] & 0x03) << 4;
+		(*out)[posOut + 1] = b64alf[(aux | (in[posIn + 1] >> 4))];
+		
+		aux = (in[posIn + 1] & 0x0F) << 2;
+		(*out)[posOut + 2] = b64alf[(aux | (in[posIn + 2] >> 6))];
+		
+		(*out)[posOut + 3] = b64alf[ in[posIn + 2] & 0x3F];
 		posIn += 3;
 		posOut += 4;
 	}
-	_encodeb64Last(&in[posIn], &(*out)[posOut], inlen%3);
 
-	out[size -1] =  '\0';
+	printf("%d\n", size);
+	(*out)[size] =  '\0';
+	
+	/*****ULTIMOS CARACTERES*****/
+	len = inlen%3;
+	if(len > 2 || len < 1){
+		return size;
+	}
+	(*out)[posOut] = b64alf[(in[posIn] >> 2)];
+	
+	aux = (in[posIn] & 0x03) << 4;
+	(*out)[posOut + 1] = b64alf[(aux | (in[posIn + 1] >> 4))];
+	if(len ==2){
+		aux = (in[posIn + 1] & 0x0F) << 2;
+		(*out)[posOut + 2] = b64alf[aux];
+	}
+	else{
+		(*out)[posOut + 2] = '=';
+	}
+	(*out)[posOut + 3] = '=';
+
 	return size;
+}
+int _decodeb64v2(byte *in, byte *out){
+	byte aux = 0;
+	if(in == NULL || out == NULL)
+		return -1;
+
+	out[0] = in[0]<<2 | (in[1] & 0x30)>>4;
+	out[1] = (in[1] & 0xF)<<4 | (in[2] & 0x3C)>>2;
+	out[2] = (in[2] & 0x30)<<2 | in[3] & 0x3F;
+	return 1;
+}
+
+
+
+int _invAlfb64(byte *in, int len){
+	int i = 0;
+	if(len < 1 || in == NULL)	
+	for(;i < len;i++){
+
+		if(in[i] >= 'A' && in[i] <= 'Z')
+			in[i] -= 'A';
+		else if(in[i]>= 'a' && in[i]<='z')
+			in[i] -= 'a'+26;
+		else if(in[i]>= '0' && in[i]<='9')
+			in[i] -= '0' + 52;
+		else if(in [i] == '+')
+			in[i] -= '+';
+		else if(in [i] == '+')
+			in[i] = 62;
+		else if(in [i] == '/')
+			in[i] = 63;
+
+	}
+	return 1;
+}
+
+int decodeb64v2(byte *in, byte **out, int inlen){
+	int size = 0;
+	if (inlen < 1 || in  == NULL || out == NULL)
+		return -1;
+
+	size = (inlen/4) * 3;
+	if(in[inlen-2] == '=')
+		size--;
+	*out = malloc(size +1 );
+	_invAlfb64(in, inlen);
+
+
+	(*out)[size] = '\0';
+	return size;  
+
 }
 int encodeb64(byte* in, byte** out, int inlen){
 
@@ -122,7 +203,7 @@ int main(void)
 {
    char* out = NULL;
    char in [] ="ManManMan";
-   encodeb64v2((char*)in, (unsigned char**) &out, 6);
+   encodeb64v2((char*)in, (unsigned char**) &out, 8);
    printf("%s\n", out);
    free(out);
    return 0;
